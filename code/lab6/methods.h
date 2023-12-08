@@ -30,7 +30,7 @@ double IntRect(TPF f, double a, double b, double eps, int& n){
     double s_prev = -1;
     double s = 0;
 
-    for(;fabs(s - s_prev) > eps && n < 100000; n *= 2){
+    for(;fabs(s - s_prev) / 3 > eps && n < 100000; n *= 2){
         s_prev = s;
 
         double h = (b - a) / n;
@@ -52,7 +52,7 @@ double IntTrap(TPF f,double a,double b,double eps,int& n){
     double s_prev = -1;
     double s = 0;
 
-    for(;fabs(s - s_prev) > eps && n < 100000; n *= 2){
+    for(;fabs(s - s_prev) / 3 > eps && n < 100000; n *= 2){
         s_prev = s;
 
         double h = (b - a) / n;
