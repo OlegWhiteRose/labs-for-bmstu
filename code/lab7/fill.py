@@ -1,4 +1,4 @@
-Там, где, сливаяся, шумят,
+text = """Там, где, сливаяся, шумят,
 Обнявшись, будто две сестры,
 Струи Арагвы и Куры,
 Был монастырь. Из-за горы
@@ -72,3 +72,23 @@
 И, гордо выслушав, больной
 Привстал, собрав остаток сил,
 И долго так он говорил:
+"""
+src = """Бабушка"""
+
+
+
+import os
+
+key = open("key.txt", 'w')
+source = open("source.txt", 'w')
+
+key.write(text)
+source.write(src)
+
+key.close()
+source.close()
+
+os.system("g++ main.cpp")
+os.system("./a.out")
+
+#encoded.ANSI.converted.txt
