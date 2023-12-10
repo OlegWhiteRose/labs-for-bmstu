@@ -50,7 +50,6 @@ template <typename T> struct Vector{
 };
 
 struct Symbol{
-    unsigned char sym;
     Vector<unsigned char> encoded;
     int cnt = 0;
 
@@ -59,35 +58,15 @@ struct Symbol{
     }
 };
 
-std::ifstream::pos_type filesize(const char* filename)
-{
-    std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
-
-    int res = in.tellg();
-    in.close();
-
-    return res;
-}
-
-int moduled(int n, int l, int r){
-    if(n >= l && n <= r) return n;
-
-    if(n < l){
-        return r - abs(l - n) % abs(r - l);
-    }
-
-    return l + abs(r - n) % abs(r - l);
-}
-
 int words_cnt(const char* filename){
-    std::ifstream  fin(filename);
+    std::ifstream fin(filename, std::ios::binary);
 
     int cnt = 0;
     while(!fin.eof()){
-        char* s = new char[50];
+        char* s = new char[1000];
         fin >> s;
         cnt++;
-    }
+    } cnt--;
 
     fin.close();
 
@@ -95,20 +74,19 @@ int words_cnt(const char* filename){
 }
 
 int* caesar_shifts(const char* filename, int length){
-    std::ifstream fin(filename);
+    std::ifstream fin(filename, std::ios::binary);
 
     int* res = new int[length];
 
     int idx = 0;
-    unsigned char* s = new unsigned char[50];
+    unsigned char* s = new unsigned char[1000];
+    fin >> s;
     while(!fin.eof()){
-        fin >> s;
-
         for(int i = 0; i < strlen((char*)s); ++i){
             res[idx] += s[i];
         }
 
-        idx++;
+        idx++; fin >> s;
     }
 
     delete []s; fin.close();
@@ -117,46 +95,49 @@ int* caesar_shifts(const char* filename, int length){
 }
 
 void encode(int* shifts, int shifts_cnt, const char* inputfile, const char* outputfile){
-    std::ifstream fin(inputfile);
-    std::ofstream fout(outputfile);
+    std::ifstream fin(inputfile, std::ios::binary);
+    std::ofstream fout(outputfile, std::ios::binary);
 
-    int idx = 0; unsigned char c;
-    while(fin >> c){        
+    int idx = 0; unsigned char c = fin.get();
+    while(fin.tellg() != EOF){      
         unsigned char key = (c + shifts[idx]) % 256;
         fout << key;
 
         idx++; idx = idx % shifts_cnt;
+        c = fin.get();
     }
 
     fin.close(); fout.close();
 }
 
 void decode(int* shifts, int shifts_cnt, const char* inputfile, const char* outputfile){
-    std::ifstream fin(inputfile);
-    std::ofstream fout(outputfile);
+    std::ifstream fin(inputfile, std::ios::binary);
+    std::ofstream fout(outputfile, std::ios::binary);
  
-    int idx = 0; unsigned char c;
-    while(fin >> c){      
+    int idx = 0; unsigned char c = fin.get();
+    while(fin.tellg() != EOF){      
         unsigned char key = (c - shifts[idx]) % 256;
         fout << key;
 
         idx++; idx = idx % shifts_cnt;
+        c = fin.get();
     }
 
     fin.close(); fout.close();
 }
 
 Symbol* creating_table(const char* sourcefile, const char* encodedfile){
-    std::ifstream fenc(encodedfile);
-    std::ifstream fdec(sourcefile);
+    std::ifstream fenc(encodedfile, std::ios::binary);
+    std::ifstream fdec(sourcefile, std::ios::binary);
 
     Symbol* stat = new Symbol[256];
-    unsigned char enc, dec;
-    while(fenc >> enc && fdec >> dec){
-        if(dec == 208) continue;
+    unsigned char enc = fenc.get(), dec = fdec.get(); 
+    while(fenc.tellg() != EOF && fdec.tellg() != EOF){
+        if(dec < 208){
+            stat[dec].add(enc);
+        }
 
-        stat[dec].sym = dec;
-        stat[dec].add(enc);
+        enc = fenc.get(); dec = fdec.get();
     }
 
     fenc.close(); fdec.close();
@@ -181,16 +162,16 @@ int length(int num){
 void make_cell(int num, std::ofstream &fout){
     int len = length(num);  
     
-    fout << '|';
+    fout << ' ';
     int spc = 3 - len;   
     for(int i = 0; i < spc; ++i){
         fout << ' ';
     }
-    fout << num << '|';
+    fout << num;
 }
 
 void print_table(Symbol* stat, const char* outputfile){
-    std::ofstream fout(outputfile);
+    std::ofstream fout(outputfile, std::ios::binary);
 
     int** table = new int*[256];
     for(int i = 0; i < 256; ++i){
@@ -204,10 +185,10 @@ void print_table(Symbol* stat, const char* outputfile){
     fout << "     ";
     for(int i = 0; i < 256; ++i){
         if (stat[i].encoded.size == 0) continue;
-        make_cell((int)stat[i].sym, fout);
+        make_cell(i, fout);
 
         for(int j = 0; j < stat[i].encoded.size; ++j){
-            table[stat[i].sym][stat[i].encoded[j]]++;
+            table[i][stat[i].encoded[j]]++;
         }
     }
     fout << '\n';
@@ -236,9 +217,10 @@ int main(){
     
     int length = words_cnt("key.txt");
     int* shifts = caesar_shifts("key.txt", length);
+    int shifts_cnt = words_cnt("key.txt");
 
-    encode(shifts, words_cnt("key.txt"), "source.txt", "encoded.txt");
-    decode(shifts, words_cnt("key.txt"), "encoded.txt", "decoded.txt");
+    encode(shifts, shifts_cnt, "source.txt", "encoded.txt");
+    decode(shifts, shifts_cnt, "encoded.txt", "decoded.txt");
 
     delete []shifts;
 
