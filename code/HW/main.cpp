@@ -1,4 +1,4 @@
-#include <iostream>
+#include <curses.h>
 #include <string.h>
 
 template<typename T, typename P> struct Pair{
